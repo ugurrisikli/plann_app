@@ -9,6 +9,7 @@ import { StreakCard }   from "@/components/dashboard/StreakCard";
 import { ProgressRing } from "@/components/dashboard/ProgressRing";
 import { WeeklyScore }  from "@/components/dashboard/WeeklyScore";
 import { MeTimeCard }   from "@/components/dashboard/MeTimeCard";
+import { MilestoneToast } from "@/components/MilestoneToast";
 import { staggerContainer, fadeUp, scaleIn } from "@/lib/animations";
 
 const ACTIONS = [
@@ -37,7 +38,7 @@ const ACTIONS = [
 
 export default function DashboardPage() {
   const { user }            = useAuth(false);
-  const { progress, loading } = useProgress();
+  const { progress, loading, milestone, dismissMilestone } = useProgress();
   const confettiFired       = useRef(false);
   const firstName           = user?.name?.split(" ")[0] || "kullanıcı";
 
@@ -63,6 +64,7 @@ export default function DashboardPage() {
 
   return (
     <div className="min-h-screen bg-[#FFF8F2]">
+      <MilestoneToast milestone={milestone} onClose={dismissMilestone} />
 
       {/* ── Hero ── */}
       <header className="relative overflow-hidden gradient-hero px-6 pt-8 pb-10">
@@ -121,22 +123,22 @@ export default function DashboardPage() {
           variants={staggerContainer}
           initial="hidden"
           animate="show"
-          className="grid grid-cols-3 gap-3"
+          className="grid grid-cols-3 gap-2.5"
         >
           <motion.div variants={scaleIn} className="col-span-1">
             <StreakCard weeks={progress.streak_weeks} />
           </motion.div>
 
-          <motion.div variants={scaleIn} className="col-span-1 bg-white rounded-2xl p-4 flex flex-col items-center justify-center gap-1 shadow-card">
-            <ProgressRing value={progress.weekly_approved} max={progress.weekly_total} size={80} />
+          <motion.div variants={scaleIn} className="col-span-1 bg-white rounded-2xl p-3 flex flex-col items-center justify-center gap-1 shadow-card">
+            <ProgressRing value={progress.weekly_approved} max={progress.weekly_total} size={72} />
             <p className="text-[10px] text-[#A88070] font-500 text-center leading-tight">hafta planı</p>
           </motion.div>
 
-          <motion.div variants={scaleIn} className="col-span-1 bg-white rounded-2xl p-4 flex flex-col items-center justify-center gap-2 shadow-card">
-            <span className="text-2xl">📅</span>
+          <motion.div variants={scaleIn} className="col-span-1 bg-white rounded-2xl p-3 flex flex-col items-center justify-center gap-1.5 shadow-card">
+            <span className="text-xl">📅</span>
             <div className="text-center">
               <p className="text-lg font-800 text-[#1A0F0A] leading-none">{progress.weekly_approved}</p>
-              <p className="text-[10px] text-[#A88070] font-500">onaylı görev</p>
+              <p className="text-[10px] text-[#A88070] font-500 leading-snug">onaylı<br/>görev</p>
             </div>
           </motion.div>
         </motion.div>

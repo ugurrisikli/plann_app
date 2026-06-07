@@ -17,16 +17,16 @@ export function Navigation() {
   const pathname = usePathname();
 
   return (
-    <nav className="fixed bottom-5 left-1/2 -translate-x-1/2 z-50">
+    <nav className="fixed bottom-4 left-1/2 -translate-x-1/2 z-50 px-4 w-full max-w-sm">
       <LayoutGroup>
         <motion.div
           layout
-          className="flex items-center gap-0.5 bg-white/90 backdrop-blur-xl rounded-full px-2 py-2 shadow-nav border border-[#F0E4D7]"
+          className="flex items-center justify-between bg-white/92 backdrop-blur-xl rounded-full px-2 py-2 shadow-nav border border-[#F0E4D7] w-full"
         >
           {NAV_ITEMS.map(({ href, icon: Icon, label }) => {
             const active = pathname === href || pathname.startsWith(href + "/");
             return (
-              <motion.div key={href} layout className="relative">
+              <motion.div key={href} layout className="relative flex-1 flex justify-center">
                 {/* Sliding pill background */}
                 {active && (
                   <motion.div
@@ -38,14 +38,14 @@ export function Navigation() {
 
                 <Link
                   href={href}
-                  className={`relative z-10 flex items-center gap-1.5 rounded-full px-3 py-2 transition-colors duration-200 ${
+                  className={`relative z-10 flex items-center justify-center gap-1 rounded-full px-2 py-2 w-full transition-colors duration-200 ${
                     active
                       ? "text-white"
                       : "text-[#A88070] hover:text-[#6B4F3A]"
                   }`}
                 >
                   <Icon
-                    size={18}
+                    size={17}
                     strokeWidth={active ? 2.25 : 1.75}
                     className="shrink-0"
                   />
@@ -59,7 +59,7 @@ export function Navigation() {
                         animate={{ opacity: 1, width: "auto" }}
                         exit={{ opacity: 0, width: 0 }}
                         transition={{ duration: 0.22, ease: [0.4, 0, 0.2, 1] }}
-                        className="text-xs font-semibold whitespace-nowrap overflow-hidden"
+                        className="text-[11px] font-700 whitespace-nowrap overflow-hidden"
                       >
                         {label}
                       </motion.span>

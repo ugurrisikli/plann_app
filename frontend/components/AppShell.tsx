@@ -31,8 +31,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="h-full bg-[#FFF8F2]">
-      {/* pb-28 → floating nav için alan */}
-      <main className="h-full overflow-y-auto pb-28">
+      {/* pb-24 → floating nav için alan (nav bottom-4 + ~56px yükseklik) */}
+      <main className="h-full overflow-y-auto pb-24">
         {children}
       </main>
       <Navigation />
