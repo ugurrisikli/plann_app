@@ -1,7 +1,9 @@
 "use client";
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { Sparkles, ChevronRight, CheckCircle2 } from "lucide-react";
+import { motion } from "framer-motion";
+import { Sparkles, ChevronRight } from "lucide-react";
+import { cardHover } from "@/lib/animations";
 
 const BACKEND = process.env.NEXT_PUBLIC_BACKEND_URL ?? "";
 
@@ -21,7 +23,7 @@ function calcCompletion(profile: Record<string, unknown> | null): number {
 
 export function MeTimeCard() {
   const [profile, setProfile] = useState<Record<string, unknown> | null>(null);
-  const [loaded, setLoaded] = useState(false);
+  const [loaded, setLoaded]   = useState(false);
 
   useEffect(() => {
     fetch(`${BACKEND}/api/me-time/profile`, { credentials: "include" })
@@ -32,30 +34,40 @@ export function MeTimeCard() {
 
   if (!loaded) return null;
 
-  const pct = calcCompletion(profile);
+  const pct        = calcCompletion(profile);
   const isComplete = pct >= 80;
-  const interests = (profile?.interests as string[] | undefined) ?? [];
+  const interests  = (profile?.interests as string[] | undefined) ?? [];
 
   return (
-    <div className="bg-white border border-zinc-200 rounded-2xl overflow-hidden shadow-sm">
-      <div className="flex items-center gap-3 px-5 py-4 border-b border-zinc-100">
-        <Sparkles size={15} strokeWidth={1.75} className="text-zinc-400" />
-        <p className="text-sm font-semibold text-zinc-700">Me Time Profili</p>
-        <span className={`ml-auto text-xs font-medium px-2 py-0.5 rounded-full ${
+    <motion.div
+      initial="rest"
+      whileHover="hover"
+      variants={cardHover}
+      className="bg-white rounded-2xl overflow-hidden"
+    >
+      {/* Header */}
+      <div className="flex items-center gap-2.5 px-5 py-4 border-b border-[#F8EFE8]">
+        <div className="w-7 h-7 rounded-lg gradient-subtle flex items-center justify-center">
+          <Sparkles size={13} strokeWidth={1.75} className="text-[#FF6B35]" />
+        </div>
+        <p className="text-sm font-600 text-[#1A0F0A]">Me Time Profili</p>
+        <span className={`ml-auto text-[11px] font-600 px-2.5 py-0.5 rounded-full ${
           isComplete
             ? "bg-green-100 text-green-700"
-            : "bg-amber-100 text-amber-700"
+            : "bg-[#FFF1EC] text-[#FF6B35]"
         }`}>
-          %{pct} tamamlandı
+          %{pct}
         </span>
       </div>
 
       <div className="px-5 py-4 space-y-4">
         {/* Progress bar */}
-        <div className="w-full bg-zinc-100 rounded-full h-1.5">
-          <div
-            className="bg-zinc-900 h-1.5 rounded-full transition-all"
-            style={{ width: `${pct}%` }}
+        <div className="relative h-1.5 bg-[#F8EFE8] rounded-full overflow-hidden">
+          <motion.div
+            className="absolute inset-y-0 left-0 rounded-full gradient-primary"
+            initial={{ width: 0 }}
+            animate={{ width: `${pct}%` }}
+            transition={{ duration: 1, ease: "easeOut", delay: 0.2 }}
           />
         </div>
 
@@ -64,52 +76,44 @@ export function MeTimeCard() {
             {!!profile.city && (
               <Row label="Şehir" value={`${String(profile.city)}${profile.district ? `, ${String(profile.district)}` : ""}`} />
             )}
-            {!!profile.budget_range && (
-              <Row label="Bütçe" value={String(profile.budget_range)} />
-            )}
-            {!!profile.duration_preference && (
-              <Row label="Süre" value={String(profile.duration_preference)} />
-            )}
+            {!!profile.budget_range && <Row label="Bütçe" value={String(profile.budget_range)} />}
+            {!!profile.duration_preference && <Row label="Süre" value={String(profile.duration_preference)} />}
             {interests.length > 0 && (
               <div className="flex flex-wrap gap-1.5 pt-1">
                 {interests.slice(0, 4).map((i) => (
-                  <span key={i} className="text-xs bg-zinc-100 text-zinc-600 px-2 py-0.5 rounded-full">
+                  <span key={i} className="text-xs bg-[#FFF1EC] text-[#FF6B35] font-500 px-2.5 py-0.5 rounded-full">
                     {i}
                   </span>
                 ))}
                 {interests.length > 4 && (
-                  <span className="text-xs text-zinc-400">+{interests.length - 4}</span>
+                  <span className="text-xs text-[#A88070]">+{interests.length - 4}</span>
                 )}
               </div>
             )}
           </div>
         ) : (
-          <p className="text-sm text-zinc-500">
+          <p className="text-sm text-[#A88070]">
             Profilini doldurarak sana özel aktivite önerileri al.
           </p>
         )}
 
         <Link
           href="/me-time/profile"
-          className="flex items-center justify-between w-full px-4 py-2.5 rounded-xl bg-zinc-900 text-white text-sm font-medium hover:bg-zinc-700 transition-colors"
+          className="flex items-center justify-between w-full px-4 py-2.5 rounded-xl gradient-primary text-white text-sm font-600 hover:opacity-90 transition-opacity"
         >
-          {isComplete ? (
-            <span className="flex items-center gap-2"><CheckCircle2 size={14} /> Profili Güncelle</span>
-          ) : (
-            <span>Profili Tamamla</span>
-          )}
+          <span>{isComplete ? "Profili Güncelle" : "Profili Tamamla"}</span>
           <ChevronRight size={14} />
         </Link>
       </div>
-    </div>
+    </motion.div>
   );
 }
 
 function Row({ label, value }: { label: string; value: string }) {
   return (
-    <div className="flex items-center justify-between text-sm">
-      <span className="text-zinc-400 text-xs">{label}</span>
-      <span className="text-zinc-700 font-medium text-xs">{value}</span>
+    <div className="flex items-center justify-between">
+      <span className="text-[#A88070] text-xs font-500">{label}</span>
+      <span className="text-[#1A0F0A] font-600 text-xs">{value}</span>
     </div>
   );
 }

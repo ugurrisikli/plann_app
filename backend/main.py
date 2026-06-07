@@ -12,6 +12,7 @@ from api.me_time import router as me_time_router
 from api.plan import router as plan_router
 from api.cron import router as cron_router
 from api.settings import router as settings_router
+from api.stats import router as stats_router
 import logging
 
 logging.basicConfig(level=logging.INFO)
@@ -43,6 +44,7 @@ app.include_router(me_time_router)
 app.include_router(plan_router)
 app.include_router(cron_router)
 app.include_router(settings_router)
+app.include_router(stats_router)
 
 
 @app.exception_handler(Exception)
