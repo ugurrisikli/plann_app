@@ -1,12 +1,15 @@
 from fastapi import APIRouter, HTTPException, Request
 from fastapi.responses import RedirectResponse, JSONResponse
 from pydantic import BaseModel
-from services.google.auth import get_flow, credentials_from_token_data, token_data_from_credentials
+from passlib.context import CryptContext
+from services.google.auth import get_flow, token_data_from_credentials
 from core.config import get_settings
 from supabase import create_client
 import httpx
 import jwt
 import datetime
+
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 router = APIRouter(prefix="/api/auth", tags=["auth"])
 
@@ -138,18 +141,19 @@ async def signup(payload: SignupPayload):
     settings = get_settings()
     supabase = get_supabase()
 
-    existing = supabase.table("users").select("id").eq("email", payload.email).execute()
+    existing = supabase.table("users").select("id, auth_provider").eq("email", payload.email).execute()
     if existing.data:
+        provider = existing.data[0].get("auth_provider", "")
+        if provider == "google":
+            raise HTTPException(status_code=409, detail="Bu e-posta Google ile kayıtlı. 'Google ile Giriş' butonunu kullan.")
         raise HTTPException(status_code=409, detail="Bu e-posta zaten kayıtlı.")
 
-    result = supabase.auth.sign_up({"email": payload.email, "password": payload.password})
-    if result.user is None:
-        raise HTTPException(status_code=400, detail="Kayıt oluşturulamadı.")
-
+    hashed = pwd_context.hash(payload.password)
     insert = supabase.table("users").insert({
         "email": payload.email,
         "name": payload.name or payload.email.split("@")[0],
         "auth_provider": "email",
+        "password_hash": hashed,
     }).execute()
     user_id = insert.data[0]["id"]
 
@@ -161,23 +165,19 @@ async def login(payload: LoginPayload):
     settings = get_settings()
     supabase = get_supabase()
 
-    try:
-        result = supabase.auth.sign_in_with_password({"email": payload.email, "password": payload.password})
-    except Exception:
+    row = supabase.table("users").select("id, auth_provider, password_hash").eq("email", payload.email).execute()
+    if not row.data:
         raise HTTPException(status_code=401, detail="E-posta veya şifre hatalı.")
 
-    if result.user is None:
+    user = row.data[0]
+
+    if user.get("auth_provider") == "google":
+        raise HTTPException(status_code=401, detail="Bu hesap Google ile kayıtlı. Sayfadaki 'Google ile Giriş' butonunu kullan.")
+
+    stored_hash = user.get("password_hash")
+    if not stored_hash:
+        raise HTTPException(status_code=401, detail="Bu hesap için şifre belirlenmemiş. Google ile giriş yapabilir veya yeni bir hesap oluşturabilirsin.")
+    if not pwd_context.verify(payload.password, stored_hash):
         raise HTTPException(status_code=401, detail="E-posta veya şifre hatalı.")
 
-    user_row = supabase.table("users").select("id").eq("email", payload.email).execute()
-    if not user_row.data:
-        insert = supabase.table("users").insert({
-            "email": payload.email,
-            "name": payload.email.split("@")[0],
-            "auth_provider": "email",
-        }).execute()
-        user_id = insert.data[0]["id"]
-    else:
-        user_id = user_row.data[0]["id"]
-
-    return _make_session_response(user_id, payload.email, settings)
+    return _make_session_response(user["id"], payload.email, settings)
