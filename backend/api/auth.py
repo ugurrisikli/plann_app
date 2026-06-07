@@ -99,13 +99,14 @@ async def google_callback(request: Request, code: str, state: str = ""):
             algorithm="HS256",
         )
 
-        response = RedirectResponse(f"{settings.frontend_url}/dashboard")
+        base = settings.frontend_url.rstrip("/")
+        response = RedirectResponse(f"{base}/dashboard")
         response.set_cookie(
             "session",
             session_token,
             httponly=True,
             secure=_is_production(),
-            samesite="lax",
+            samesite="none" if _is_production() else "lax",
             max_age=30 * 24 * 3600,
         )
         return response
@@ -115,7 +116,8 @@ async def google_callback(request: Request, code: str, state: str = ""):
         logger.exception("Google OAuth callback hatası: %s", exc)
         err = str(exc)[:200]
         import urllib.parse
-        return RedirectResponse(f"{settings.frontend_url}/?error={urllib.parse.quote(err)}")
+        base = settings.frontend_url.rstrip("/")
+        return RedirectResponse(f"{base}/?error={urllib.parse.quote(err)}")
 
 
 @router.post("/logout")

@@ -87,11 +87,12 @@ export default function LoginPage() {
 
           {tab === "google" ? (
             <div className="space-y-4">
-              <a href={`${BACKEND}/api/auth/google`}>
-                <button className="w-full flex items-center justify-center gap-3 h-11 rounded-xl bg-white text-zinc-800 text-sm font-medium hover:bg-zinc-100 transition-colors">
-                  <GoogleIcon />
-                  Google ile Giriş Yap
-                </button>
+              <a
+                href={`${BACKEND}/api/auth/google`}
+                className="w-full flex items-center justify-center gap-3 h-11 rounded-xl bg-white text-zinc-800 text-sm font-medium hover:bg-zinc-100 transition-colors"
+              >
+                <GoogleIcon />
+                Google ile Giriş Yap
               </a>
               {error && (
                 <p className="text-xs text-red-400 bg-red-400/10 border border-red-400/20 rounded-lg px-3 py-2 break-all">
