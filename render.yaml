@@ -1,0 +1,33 @@
+services:
+  - type: web
+    name: plann-app-backend
+    runtime: python
+    rootDir: backend
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
+    plan: free
+    envVars:
+      - key: ANTHROPIC_API_KEY
+        sync: false
+      - key: GOOGLE_CLIENT_ID
+        sync: false
+      - key: GOOGLE_CLIENT_SECRET
+        sync: false
+      - key: GOOGLE_MAPS_API_KEY
+        sync: false
+      - key: GOOGLE_AI_STUDIO_API_KEY
+        sync: false
+      - key: GOOGLE_REDIRECT_URI
+        sync: false
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_SERVICE_KEY
+        sync: false
+      - key: SECRET_KEY
+        sync: false
+      - key: TICKETMASTER_API_KEY
+        sync: false
+      - key: CRON_SECRET
+        sync: false
+      - key: FRONTEND_URL
+        sync: false
