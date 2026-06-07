@@ -1,6 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 
 const BACKEND = process.env.NEXT_PUBLIC_BACKEND_URL ?? "http://localhost:8000";
 
@@ -9,7 +9,6 @@ type Mode = "login" | "signup";
 
 export default function LoginPage() {
   const router = useRouter();
-  const searchParams = useSearchParams();
   const [tab, setTab] = useState<Tab>("google");
   const [mode, setMode] = useState<Mode>("login");
   const [email, setEmail] = useState("");
@@ -19,9 +18,9 @@ export default function LoginPage() {
   const [error, setError] = useState("");
 
   useEffect(() => {
-    const err = searchParams.get("error");
+    const err = new URLSearchParams(window.location.search).get("error");
     if (err) setError(`Google girişi başarısız: ${err}`);
-  }, [searchParams]);
+  }, []);
 
   async function handleEmailAuth(e: React.FormEvent) {
     e.preventDefault();

@@ -37,22 +37,53 @@ def get_supabase():
 
 @router.get("/google")
 async def google_login():
+    import secrets, hashlib, base64
+    settings = get_settings()
+
+    # PKCE: code_verifier üret, challenge hesapla
+    code_verifier = secrets.token_urlsafe(64)
+    code_challenge = base64.urlsafe_b64encode(
+        hashlib.sha256(code_verifier.encode()).digest()
+    ).rstrip(b"=").decode()
+
+    # code_verifier'ı state JWT içinde sakla (15 dk geçerli)
+    state_token = jwt.encode(
+        {
+            "cv": code_verifier,
+            "exp": datetime.datetime.utcnow() + datetime.timedelta(minutes=15),
+        },
+        settings.secret_key,
+        algorithm="HS256",
+    )
+
     flow = get_flow()
-    auth_url, state = flow.authorization_url(
+    auth_url, _ = flow.authorization_url(
         access_type="offline",
-        include_granted_scopes="true",
         prompt="consent",
+        state=state_token,
+        code_challenge=code_challenge,
+        code_challenge_method="S256",
     )
     return RedirectResponse(auth_url)
 
 
 @router.get("/callback")
 async def google_callback(request: Request, code: str, state: str = ""):
-    import traceback
     settings = get_settings()
     try:
+        # state JWT'den code_verifier'ı çıkar
+        code_verifier: str | None = None
+        try:
+            state_data = jwt.decode(state, settings.secret_key, algorithms=["HS256"])
+            code_verifier = state_data.get("cv")
+        except Exception:
+            pass
+
         flow = get_flow()
-        flow.fetch_token(code=code)
+        if code_verifier:
+            flow.fetch_token(code=code, code_verifier=code_verifier)
+        else:
+            flow.fetch_token(code=code)
         credentials = flow.credentials
 
         async with httpx.AsyncClient() as client:
