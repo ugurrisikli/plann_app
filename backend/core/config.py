@@ -10,7 +10,10 @@ class Settings(BaseSettings):
     google_client_secret: str
     google_maps_api_key: str
     google_ai_studio_api_key: str = ""
-    google_redirect_uri: str = "http://localhost:8000/api/auth/callback"
+    # Boş bırakılırsa RAILWAY_PUBLIC_DOMAIN'den otomatik türetilir
+    google_redirect_uri: str = ""
+    # Railway otomatik set eder: plann-app-backend-production.up.railway.app
+    railway_public_domain: str = ""
     supabase_url: str
     supabase_service_key: str
     ticketmaster_api_key: str = ""
@@ -21,6 +24,14 @@ class Settings(BaseSettings):
     cron_secret: str = ""
     dev_google_access_token: str = ""
     dev_google_refresh_token: str = ""
+
+    @property
+    def effective_redirect_uri(self) -> str:
+        if self.google_redirect_uri:
+            return self.google_redirect_uri
+        if self.railway_public_domain:
+            return f"https://{self.railway_public_domain}/api/auth/callback"
+        return "http://localhost:8000/api/auth/callback"
 
 
 @lru_cache

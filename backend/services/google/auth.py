@@ -16,9 +16,10 @@ SCOPES = [
 
 
 def get_flow(redirect_uri: str | None = None) -> Flow:
+    import logging
     settings = get_settings()
-    # Önce env'deki sabit URI'yi kullan, yoksa parametre, yoksa default
-    uri = redirect_uri or settings.google_redirect_uri
+    uri = redirect_uri or settings.effective_redirect_uri
+    logging.getLogger(__name__).info("OAuth redirect_uri: %s", uri)
     client_config = {
         "web": {
             "client_id": settings.google_client_id,

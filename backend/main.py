@@ -48,6 +48,20 @@ async def global_exception_handler(request: Request, exc: Exception):
     )
 
 
+@app.on_event("startup")
+async def on_startup():
+    s = get_settings()
+    logger.info("=== STARTUP ===")
+    logger.info("frontend_url: %s", s.frontend_url)
+    logger.info("effective_redirect_uri: %s", s.effective_redirect_uri)
+    logger.info("railway_public_domain: %s", s.railway_public_domain or "(not set)")
+
+
 @app.get("/health")
 async def health():
-    return {"status": "ok"}
+    s = get_settings()
+    return {
+        "status": "ok",
+        "redirect_uri": s.effective_redirect_uri,
+        "frontend_url": s.frontend_url,
+    }
