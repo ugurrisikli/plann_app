@@ -862,19 +862,50 @@ npm run dev
 - [x] Me Time öneri sayfası
 - [x] CEO Chat'te Me Time inline — ayrı sayfaya yönlendirmeden yanıt
 
-### 🔄 Faz 6 — Cilalama & Deploy (DEVAM EDİYOR)
+### ✅ Faz 6 — Deploy & Auth (TAMAMLANDI - 2026-06-07)
+- [x] Vercel (frontend) + Railway (backend) deploy — GitHub CI/CD
+- [x] Google OAuth PKCE (code_verifier state JWT ile taşınıyor)
+- [x] OAUTHLIB_RELAX_TOKEN_SCOPE=1 — scope sıra farkı hatası önlendi
+- [x] Cross-site cookie: samesite=none production'da
+- [x] Trailing slash redirect düzeltildi (//dashboard sorunu)
+- [x] /api/auth/me endpoint — session doğrulama
+- [x] AppShell auth guard — tüm korunan sayfalar JWT kontrolü
+- [x] useAuth hook — user bilgisi + otomatik redirect
+- [x] Email/şifre auth bcrypt — Supabase Auth bağımlılığı kaldırıldı
+- [x] Logout endpoint cross-site düzeltildi
+
+### 🔄 Faz 7 — Cilalama (DEVAM EDİYOR)
 - [ ] Me Time suggestions sayfası — takvime ekleme UX (date/time picker)
 - [ ] Haftalık plan drag-drop → API PATCH çağrısı (şu an local state)
 - [ ] Drive Agent (tam implementasyon)
 - [x] Otomatik haftalık plan takvimi (cron — `api/cron.py`)
 - [ ] Mobile view düzenlemeleri
-- [ ] Vercel (frontend) + Railway (backend) deploy
 - [ ] End-to-end testler
 
-### Bilinen Kısıtlamalar
-- Drive API scope eksikliği → kullanıcıların OAuth'u yenilemesi gerekiyor ("İzinleri Yenile" butonu ayarlarda)
-- Apify/Eventbrite entegrasyonu kaldırıldı (404 hatası) — Google Maps + Ticketmaster yeterli
-- Planning Agent test veriyle 1 görev üretiyordu; prompt güncellemesiyle düzeltildi
+### Bilinen Kısıtlamalar & Çözümler
+- Drive API scope eksikliği → "İzinleri Yenile" butonu ayarlarda, yeni token Drive scope dahil
+- Apify/Eventbrite entegrasyonu kaldırıldı — Google Maps + Ticketmaster yeterli
+- Hafta başı hesabı: Perşembe+ ise gelecek haftanın Pazartesi'si alınıyor (düzeltildi 2026-06-07)
+- Planning Agent + Me Time Agent: Gemini 2.5 Flash modeline geçildi
+
+### Auth Mimarisi (Production)
+- Cookie: `httponly`, `samesite=none`, `secure=true` — cross-site Railway→Vercel çalışıyor
+- PKCE: `code_verifier` state JWT içinde taşınıyor (server-side state gerekmez)
+- `OAUTHLIB_RELAX_TOKEN_SCOPE=1` — Google scope sırasını değiştirince hata vermez
+- JWT 30 gün — `SECRET_KEY` Railway env var'ından
+
+### Deploy Env Vars
+```bash
+# Railway (Backend)
+ANTHROPIC_API_KEY, GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET
+GOOGLE_MAPS_API_KEY, GOOGLE_AI_STUDIO_API_KEY
+SUPABASE_URL, SUPABASE_SERVICE_KEY
+TICKETMASTER_API_KEY, SECRET_KEY, FRONTEND_URL, CRON_SECRET
+# GOOGLE_REDIRECT_URI otomatik: RAILWAY_PUBLIC_DOMAIN'den türetiliyor
+
+# Vercel (Frontend)
+NEXT_PUBLIC_BACKEND_URL=https://plann-app-backend-production.up.railway.app
+```
 
 ---
 

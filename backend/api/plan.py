@@ -234,6 +234,13 @@ async def approve_single_task(task_id: str, request: Request):
 
 
 def _current_week_monday() -> datetime:
+    """Perşembe veya sonrasında gelecek haftanın Pazartesi'sini döndür,
+    Pazartesi-Çarşamba'da bu haftanın Pazartesi'sini döndür."""
     today = datetime.now(timezone.utc)
-    monday = today - timedelta(days=today.weekday())
+    weekday = today.weekday()  # Pzt=0 … Paz=6
+    if weekday >= 3:  # Perşembe, Cuma, Cumartesi, Pazar → gelecek Pzt
+        days_ahead = 7 - weekday
+        monday = today + timedelta(days=days_ahead)
+    else:
+        monday = today - timedelta(days=weekday)
     return monday.replace(hour=0, minute=0, second=0, microsecond=0)
