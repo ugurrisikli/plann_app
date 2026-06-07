@@ -2,6 +2,7 @@
 import Link from "next/link";
 import { MessageCircle, CalendarDays, Sparkles, ArrowRight, Zap } from "lucide-react";
 import { MeTimeCard } from "@/components/dashboard/MeTimeCard";
+import { useAuth } from "@/hooks/useAuth";
 
 const ACTIONS = [
   {
@@ -40,11 +41,15 @@ const QUICK_TIPS = [
 ];
 
 export default function DashboardPage() {
+  const { user } = useAuth(false);
+
   return (
     <div className="min-h-screen bg-zinc-50">
       {/* Header */}
       <header className="bg-white border-b border-zinc-200 px-6 py-5">
-        <h1 className="font-semibold text-xl text-zinc-900">Merhaba 👋</h1>
+        <h1 className="font-semibold text-xl text-zinc-900">
+          Merhaba, {user?.name?.split(" ")[0] || "kullanıcı"} 👋
+        </h1>
         <p className="text-sm text-zinc-500 mt-0.5">Plan Pete seninle burada.</p>
       </header>
 

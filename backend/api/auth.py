@@ -81,9 +81,8 @@ async def google_callback(request: Request, code: str, state: str = ""):
 
         flow = get_flow()
         if code_verifier:
-            flow.fetch_token(code=code, code_verifier=code_verifier)
-        else:
-            flow.fetch_token(code=code)
+            flow.code_verifier = code_verifier
+        flow.fetch_token(code=code)
         credentials = flow.credentials
 
         async with httpx.AsyncClient() as client:
@@ -153,9 +152,37 @@ async def google_callback(request: Request, code: str, state: str = ""):
 
 @router.post("/logout")
 async def logout():
-    response = RedirectResponse("/")
-    response.delete_cookie("session")
+    settings = get_settings()
+    base = settings.frontend_url.rstrip("/")
+    response = RedirectResponse(f"{base}/")
+    response.delete_cookie(
+        "session",
+        httponly=True,
+        secure=_is_production(),
+        samesite="none" if _is_production() else "lax",
+    )
     return response
+
+
+@router.get("/me")
+async def me(request: Request):
+    token = request.cookies.get("session")
+    if not token:
+        raise HTTPException(status_code=401, detail="Oturum bulunamadı.")
+    try:
+        settings = get_settings()
+        payload = jwt.decode(token, settings.secret_key, algorithms=["HS256"])
+    except Exception:
+        raise HTTPException(status_code=401, detail="Geçersiz oturum.")
+
+    user_id = payload.get("user_id")
+    email = payload.get("email", "")
+
+    supabase = get_supabase()
+    row = supabase.table("users").select("name, email").eq("id", user_id).execute()
+    name = row.data[0].get("name") or email.split("@")[0] if row.data else email.split("@")[0]
+
+    return {"user_id": user_id, "email": email, "name": name}
 
 
 # ── Email / Şifre Auth ────────────────────────────────────────────────────────
@@ -176,7 +203,7 @@ def _make_session_response(user_id: str, email: str, settings) -> JSONResponse:
         token,
         httponly=True,
         secure=_is_production(),
-        samesite="lax",
+        samesite="none" if _is_production() else "lax",
         max_age=30 * 24 * 3600,
     )
     return resp

@@ -55,7 +55,7 @@ export function Navigation() {
 
         {/* Bottom */}
         <div className="px-3 pb-4 border-t border-zinc-800 pt-3">
-          <form action="http://localhost:8000/api/auth/logout" method="post">
+          <form action={`${process.env.NEXT_PUBLIC_BACKEND_URL ?? "http://localhost:8000"}/api/auth/logout`} method="post">
             <button
               type="submit"
               className="w-full text-left flex items-center gap-3 px-3 py-2.5 rounded-lg text-xs text-zinc-500 hover:text-zinc-300 hover:bg-zinc-800/60 transition-colors"

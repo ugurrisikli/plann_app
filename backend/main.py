@@ -1,3 +1,7 @@
+import os
+# requests_oauthlib scope değişikliklerine izin ver (Google scope sırasını değiştirebilir)
+os.environ["OAUTHLIB_RELAX_TOKEN_SCOPE"] = "1"
+
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
