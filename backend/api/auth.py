@@ -48,61 +48,74 @@ async def google_login():
 
 @router.get("/callback")
 async def google_callback(request: Request, code: str, state: str = ""):
+    import traceback
     settings = get_settings()
-    flow = get_flow()
-    flow.fetch_token(code=code)
-    credentials = flow.credentials
+    try:
+        flow = get_flow()
+        flow.fetch_token(code=code)
+        credentials = flow.credentials
 
-    async with httpx.AsyncClient() as client:
-        resp = await client.get(
-            "https://www.googleapis.com/oauth2/v2/userinfo",
-            headers={"Authorization": f"Bearer {credentials.token}"},
+        async with httpx.AsyncClient() as client:
+            resp = await client.get(
+                "https://www.googleapis.com/oauth2/v2/userinfo",
+                headers={"Authorization": f"Bearer {credentials.token}"},
+            )
+        userinfo = resp.json()
+        email = userinfo.get("email")
+        if not email:
+            raise ValueError(f"Google userinfo'da email yok: {userinfo}")
+        name = userinfo.get("name", "")
+
+        token_data = token_data_from_credentials(credentials)
+        supabase = get_supabase()
+
+        existing = supabase.table("users").select("id").eq("email", email).execute()
+        if existing.data:
+            user_id = existing.data[0]["id"]
+            supabase.table("users").update({
+                "google_access_token": token_data["access_token"],
+                "google_refresh_token": token_data["refresh_token"],
+                "token_expiry": token_data["token_expiry"],
+                "auth_provider": "google",
+            }).eq("id", user_id).execute()
+        else:
+            result = supabase.table("users").insert({
+                "email": email,
+                "name": name,
+                "auth_provider": "google",
+                "google_access_token": token_data["access_token"],
+                "google_refresh_token": token_data["refresh_token"],
+                "token_expiry": token_data["token_expiry"],
+            }).execute()
+            user_id = result.data[0]["id"]
+
+        session_token = jwt.encode(
+            {
+                "user_id": user_id,
+                "email": email,
+                "exp": datetime.datetime.utcnow() + datetime.timedelta(days=30),
+            },
+            settings.secret_key,
+            algorithm="HS256",
         )
-    userinfo = resp.json()
-    email = userinfo["email"]
-    name = userinfo.get("name", "")
 
-    token_data = token_data_from_credentials(credentials)
-    supabase = get_supabase()
+        response = RedirectResponse(f"{settings.frontend_url}/dashboard")
+        response.set_cookie(
+            "session",
+            session_token,
+            httponly=True,
+            secure=_is_production(),
+            samesite="lax",
+            max_age=30 * 24 * 3600,
+        )
+        return response
 
-    existing = supabase.table("users").select("id").eq("email", email).execute()
-    if existing.data:
-        user_id = existing.data[0]["id"]
-        supabase.table("users").update({
-            "google_access_token": token_data["access_token"],
-            "google_refresh_token": token_data["refresh_token"],
-            "token_expiry": token_data["token_expiry"],
-        }).eq("id", user_id).execute()
-    else:
-        result = supabase.table("users").insert({
-            "email": email,
-            "name": name,
-            "google_access_token": token_data["access_token"],
-            "google_refresh_token": token_data["refresh_token"],
-            "token_expiry": token_data["token_expiry"],
-        }).execute()
-        user_id = result.data[0]["id"]
-
-    session_token = jwt.encode(
-        {
-            "user_id": user_id,
-            "email": email,
-            "exp": datetime.datetime.utcnow() + datetime.timedelta(days=30),
-        },
-        settings.secret_key,
-        algorithm="HS256",
-    )
-
-    response = RedirectResponse(f"{settings.frontend_url}/dashboard")
-    response.set_cookie(
-        "session",
-        session_token,
-        httponly=True,
-        secure=_is_production(),
-        samesite="lax",
-        max_age=30 * 24 * 3600,
-    )
-    return response
+    except Exception as exc:
+        logger = __import__("logging").getLogger(__name__)
+        logger.exception("Google OAuth callback hatası: %s", exc)
+        err = str(exc)[:200]
+        import urllib.parse
+        return RedirectResponse(f"{settings.frontend_url}/?error={urllib.parse.quote(err)}")
 
 
 @router.post("/logout")

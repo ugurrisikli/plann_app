@@ -1,6 +1,6 @@
 "use client";
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useEffect } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 
 const BACKEND = process.env.NEXT_PUBLIC_BACKEND_URL ?? "http://localhost:8000";
 
@@ -9,6 +9,7 @@ type Mode = "login" | "signup";
 
 export default function LoginPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [tab, setTab] = useState<Tab>("google");
   const [mode, setMode] = useState<Mode>("login");
   const [email, setEmail] = useState("");
@@ -16,6 +17,11 @@ export default function LoginPage() {
   const [name, setName] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+
+  useEffect(() => {
+    const err = searchParams.get("error");
+    if (err) setError(`Google girişi başarısız: ${err}`);
+  }, [searchParams]);
 
   async function handleEmailAuth(e: React.FormEvent) {
     e.preventDefault();
@@ -87,6 +93,11 @@ export default function LoginPage() {
                   Google ile Giriş Yap
                 </button>
               </a>
+              {error && (
+                <p className="text-xs text-red-400 bg-red-400/10 border border-red-400/20 rounded-lg px-3 py-2 break-all">
+                  {error}
+                </p>
+              )}
               <p className="text-xs text-zinc-500 text-center">
                 Google Takvim, Gmail, Drive ve Sheets erişimine izin verirsin.
               </p>
