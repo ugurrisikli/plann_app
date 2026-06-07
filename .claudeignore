@@ -1,0 +1,24 @@
+# Build artifacts
+frontend/.next/
+frontend/node_modules/
+frontend/tsconfig.tsbuildinfo
+
+# Python environment
+backend/venv/
+backend/__pycache__/
+backend/**/__pycache__/
+backend/**/*.pyc
+backend/.pytest_cache/
+
+# Secrets (never read these)
+backend/.env
+frontend/.env.local
+
+# Lock files (large, low signal)
+frontend/package-lock.json
+
+# Static assets
+frontend/public/
+
+# Unused boilerplate
+frontend/README.md

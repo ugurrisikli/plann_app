@@ -1,0 +1,25 @@
+# Ortam değişkenleri — asla commit etme
+.env
+.env.local
+.env.production
+
+# Python
+backend/venv/
+**/__pycache__/
+**/*.pyc
+**/*.pyo
+**/.pytest_cache/
+
+# Next.js
+frontend/.next/
+frontend/node_modules/
+frontend/out/
+frontend/tsconfig.tsbuildinfo
+
+# IDE
+.vscode/
+pyrightconfig.json
+
+# Sistem
+.DS_Store
+*.log
