@@ -124,7 +124,16 @@ export default function WeeklyPlanPage() {
       setTasks((items) => {
         const oldIndex = items.findIndex((i) => i.id === active.id);
         const newIndex = items.findIndex((i) => i.id === over.id);
-        return arrayMove(items, oldIndex, newIndex);
+        const next = arrayMove(items, oldIndex, newIndex);
+        // Sıralamayı backend'e kaydet (fire-and-forget)
+        next.forEach((task, i) => {
+          fetch(`${BACKEND}/api/plan/task/${task.id}`, {
+            method: "PATCH", credentials: "include",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ order: i }),
+          }).catch(() => {});
+        });
+        return next;
       });
     }
   }
@@ -287,19 +296,29 @@ function _normalizeTask(t: Record<string, unknown>): PlanTask {
   };
 }
 
-function getDateForOffset(dayOffset: number): string {
+// Backend ile tutarlı: Per(3)+ → gelecek Pzt, Pzt-Çar → bu haftanın Pzt'si
+function getWeekMonday(): Date {
   const today = new Date();
+  const weekday = (today.getDay() + 6) % 7; // Mon=0 … Sun=6
   const monday = new Date(today);
-  monday.setDate(today.getDate() - ((today.getDay() + 6) % 7));
+  monday.setHours(0, 0, 0, 0);
+  if (weekday >= 3) {
+    monday.setDate(today.getDate() + (7 - weekday));
+  } else {
+    monday.setDate(today.getDate() - weekday);
+  }
+  return monday;
+}
+
+function getDateForOffset(dayOffset: number): string {
+  const monday = getWeekMonday();
   const target = new Date(monday);
   target.setDate(monday.getDate() + dayOffset);
   return target.toISOString().split("T")[0];
 }
 
 function getDateLabel(dayOffset: number): string {
-  const today = new Date();
-  const monday = new Date(today);
-  monday.setDate(today.getDate() - ((today.getDay() + 6) % 7));
+  const monday = getWeekMonday();
   const target = new Date(monday);
   target.setDate(monday.getDate() + dayOffset);
   return `${target.getDate()}/${target.getMonth() + 1}`;

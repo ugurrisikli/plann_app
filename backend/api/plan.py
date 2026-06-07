@@ -28,6 +28,7 @@ class TaskUpdatePayload(BaseModel):
     end_time: Optional[str] = None
     date: Optional[str] = None
     status: Optional[str] = None
+    order: Optional[int] = None
 
 
 class ApprovePayload(BaseModel):

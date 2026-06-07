@@ -51,14 +51,18 @@ export default function MeTimeSuggestionsPage() {
     finally { setLoading(false); }
   }
 
-  async function addToCalendar(activityIndex: number, date: string, startTime: string) {
-    if (!suggestionId) return;
-    const res = await fetch(`${BACKEND}/api/me-time/add-to-calendar`, {
-      method: "POST", credentials: "include",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ suggestion_id: suggestionId, activity_index: activityIndex, venue_index: 0, date, start_time: startTime }),
-    });
-    if (res.ok) alert("Takvime eklendi!");
+  async function addToCalendar(activityIndex: number, date: string, startTime: string): Promise<boolean> {
+    if (!suggestionId) return false;
+    try {
+      const res = await fetch(`${BACKEND}/api/me-time/add-to-calendar`, {
+        method: "POST", credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ suggestion_id: suggestionId, activity_index: activityIndex, venue_index: 0, date, start_time: startTime }),
+      });
+      return res.ok;
+    } catch {
+      return false;
+    }
   }
 
   return (
@@ -116,10 +120,12 @@ export default function MeTimeSuggestionsPage() {
 
 function ActivityCard({ activity, index, onAddToCalendar }: {
   activity: Activity; index: number;
-  onAddToCalendar: (idx: number, date: string, time: string) => void;
+  onAddToCalendar: (idx: number, date: string, time: string) => Promise<boolean>;
 }) {
   const [expanded, setExpanded] = useState(false);
   const [showPicker, setShowPicker] = useState(false);
+  const [adding, setAdding] = useState(false);
+  const [addResult, setAddResult] = useState<"success" | "error" | null>(null);
   const [date, setDate] = useState(new Date().toISOString().split("T")[0]);
   const [time, setTime] = useState("15:00");
 
@@ -234,10 +240,16 @@ function ActivityCard({ activity, index, onAddToCalendar }: {
       {/* Takvime ekle */}
       <div className="border-t border-zinc-100 px-5 py-4">
         {!showPicker ? (
-          <button onClick={() => setShowPicker(true)}
+          addResult === "success" ? (
+            <div className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl bg-green-50 border border-green-200 text-green-700 text-sm font-medium">
+              <Calendar size={14} /> Takvime eklendi
+            </div>
+          ) : (
+          <button onClick={() => { setShowPicker(true); setAddResult(null); }}
             className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl bg-zinc-900 text-white text-sm font-medium hover:bg-zinc-700 transition-colors">
             <Calendar size={14} /> Takvime Ekle
           </button>
+          )
         ) : (
           <div className="space-y-3">
             <div className="flex gap-2">
@@ -254,15 +266,26 @@ function ActivityCard({ activity, index, onAddToCalendar }: {
               </div>
             </div>
             <div className="flex gap-2">
-              <button onClick={() => setShowPicker(false)}
+              <button onClick={() => { setShowPicker(false); setAddResult(null); }}
                 className="flex-1 py-2.5 rounded-xl border border-zinc-200 text-sm text-zinc-600 hover:bg-zinc-50 transition-colors">
                 İptal
               </button>
-              <button onClick={() => { onAddToCalendar(index, date, time); setShowPicker(false); }}
-                className="flex-1 py-2.5 rounded-xl bg-zinc-900 text-white text-sm hover:bg-zinc-700 transition-colors">
-                Ekle
+              <button
+                disabled={adding}
+                onClick={async () => {
+                  setAdding(true);
+                  const ok = await onAddToCalendar(index, date, time);
+                  setAdding(false);
+                  setAddResult(ok ? "success" : "error");
+                  if (ok) setShowPicker(false);
+                }}
+                className="flex-1 py-2.5 rounded-xl bg-zinc-900 text-white text-sm hover:bg-zinc-700 disabled:opacity-50 transition-colors">
+                {adding ? "Ekleniyor..." : "Ekle"}
               </button>
             </div>
+            {addResult === "error" && (
+              <p className="text-xs text-red-600 text-center">Takvime eklenemedi. Tekrar dene.</p>
+            )}
           </div>
         )}
       </div>

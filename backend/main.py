@@ -21,15 +21,17 @@ settings = get_settings()
 
 app = FastAPI(title="Planlama App API", version="0.1.0")
 
-# Localhost portları + production Vercel URL'si + tüm *.vercel.app preview'ları
-_allowed_origins = [settings.frontend_url] + [
-    f"http://localhost:{p}" for p in range(3000, 3010)
-]
+# allow_origin_regex + allow_credentials Starlette'de güvenilir çalışmıyor.
+# Explicit liste kullan: trailing slash temizle + sabit production URL ekle.
+_frontend = settings.frontend_url.rstrip("/")
+_allowed_origins = list({
+    _frontend,
+    "https://plann-app-frontend.vercel.app",
+} | {f"http://localhost:{p}" for p in range(3000, 3010)})
 
 app.add_middleware(
     CORSMiddleware,
     allow_origins=_allowed_origins,
-    allow_origin_regex=r"https://.*\.vercel\.app",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
