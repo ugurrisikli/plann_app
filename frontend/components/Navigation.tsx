@@ -1,90 +1,76 @@
 "use client";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import {
-  LayoutDashboard,
-  MessageCircle,
-  CalendarDays,
-  Sparkles,
-  Settings,
-} from "lucide-react";
-import { cn } from "@/lib/utils";
+import { motion, AnimatePresence, LayoutGroup } from "framer-motion";
+import { LayoutDashboard, MessageCircle, CalendarDays, Sparkles, Settings } from "lucide-react";
+import { navPill } from "@/lib/animations";
 
 const NAV_ITEMS = [
-  { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/chat", label: "Plan Pete", icon: MessageCircle },
-  { href: "/plan/weekly", label: "Haftalık Plan", icon: CalendarDays },
-  { href: "/me-time/suggestions", label: "Me Time", icon: Sparkles },
-  { href: "/settings", label: "Ayarlar", icon: Settings },
+  { href: "/dashboard",           icon: LayoutDashboard, label: "Ana Sayfa" },
+  { href: "/chat",                icon: MessageCircle,   label: "Plan Pete" },
+  { href: "/plan/weekly",         icon: CalendarDays,    label: "Haftalık"  },
+  { href: "/me-time/suggestions", icon: Sparkles,        label: "Me Time"   },
+  { href: "/settings",            icon: Settings,        label: "Ayarlar"   },
 ];
 
 export function Navigation() {
   const pathname = usePathname();
 
   return (
-    <>
-      {/* Desktop Sidebar */}
-      <aside className="hidden md:flex flex-col w-56 shrink-0 bg-zinc-950 text-zinc-100 h-full">
-        {/* Logo */}
-        <div className="px-5 pt-6 pb-4 border-b border-zinc-800">
-          <span className="text-sm font-semibold tracking-tight">Planlama</span>
-          <p className="text-xs text-zinc-500 mt-0.5">Kişisel yaşam asistanın</p>
-        </div>
-
-        {/* Nav Links */}
-        <nav className="flex-1 px-3 py-4 space-y-0.5">
-          {NAV_ITEMS.map(({ href, label, icon: Icon }) => {
+    <nav className="fixed bottom-5 left-1/2 -translate-x-1/2 z-50">
+      <LayoutGroup>
+        <motion.div
+          layout
+          className="flex items-center gap-0.5 bg-white/90 backdrop-blur-xl rounded-full px-2 py-2 shadow-nav border border-[#F0E4D7]"
+        >
+          {NAV_ITEMS.map(({ href, icon: Icon, label }) => {
             const active = pathname === href || pathname.startsWith(href + "/");
             return (
-              <Link
-                key={href}
-                href={href}
-                className={cn(
-                  "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors",
-                  active
-                    ? "bg-zinc-800 text-white"
-                    : "text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800/60"
+              <motion.div key={href} layout className="relative">
+                {/* Sliding pill background */}
+                {active && (
+                  <motion.div
+                    layoutId="nav-pill"
+                    transition={navPill}
+                    className="absolute inset-0 rounded-full gradient-primary"
+                  />
                 )}
-              >
-                <Icon size={16} strokeWidth={1.75} />
-                {label}
-              </Link>
+
+                <Link
+                  href={href}
+                  className={`relative z-10 flex items-center gap-1.5 rounded-full px-3 py-2 transition-colors duration-200 ${
+                    active
+                      ? "text-white"
+                      : "text-[#A88070] hover:text-[#6B4F3A]"
+                  }`}
+                >
+                  <Icon
+                    size={18}
+                    strokeWidth={active ? 2.25 : 1.75}
+                    className="shrink-0"
+                  />
+
+                  {/* Label — animasyonlu genişleme */}
+                  <AnimatePresence mode="popLayout" initial={false}>
+                    {active && (
+                      <motion.span
+                        key={href + "-label"}
+                        initial={{ opacity: 0, width: 0 }}
+                        animate={{ opacity: 1, width: "auto" }}
+                        exit={{ opacity: 0, width: 0 }}
+                        transition={{ duration: 0.22, ease: [0.4, 0, 0.2, 1] }}
+                        className="text-xs font-semibold whitespace-nowrap overflow-hidden"
+                      >
+                        {label}
+                      </motion.span>
+                    )}
+                  </AnimatePresence>
+                </Link>
+              </motion.div>
             );
           })}
-        </nav>
-
-        {/* Bottom */}
-        <div className="px-3 pb-4 border-t border-zinc-800 pt-3">
-          <form action={`${process.env.NEXT_PUBLIC_BACKEND_URL ?? "http://localhost:8000"}/api/auth/logout`} method="post">
-            <button
-              type="submit"
-              className="w-full text-left flex items-center gap-3 px-3 py-2.5 rounded-lg text-xs text-zinc-500 hover:text-zinc-300 hover:bg-zinc-800/60 transition-colors"
-            >
-              Çıkış Yap
-            </button>
-          </form>
-        </div>
-      </aside>
-
-      {/* Mobile Bottom Nav */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-zinc-950 border-t border-zinc-800 flex">
-        {NAV_ITEMS.map(({ href, label, icon: Icon }) => {
-          const active = pathname === href || pathname.startsWith(href + "/");
-          return (
-            <Link
-              key={href}
-              href={href}
-              className={cn(
-                "flex-1 flex flex-col items-center justify-center gap-1 py-3 text-[10px] transition-colors",
-                active ? "text-white" : "text-zinc-500"
-              )}
-            >
-              <Icon size={20} strokeWidth={1.75} />
-              <span className="leading-none">{label.split(" ")[0]}</span>
-            </Link>
-          );
-        })}
-      </nav>
-    </>
+        </motion.div>
+      </LayoutGroup>
+    </nav>
   );
 }

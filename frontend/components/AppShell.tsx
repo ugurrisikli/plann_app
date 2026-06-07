@@ -15,17 +15,14 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (isPublic) { setReady(true); return; }
     fetch(`${BACKEND}/api/auth/me`, { credentials: "include" })
-      .then((r) => {
-        if (!r.ok) router.replace("/");
-        else setReady(true);
-      })
+      .then((r) => { if (!r.ok) router.replace("/"); else setReady(true); })
       .catch(() => router.replace("/"));
   }, [pathname]);
 
   if (!isPublic && !ready) {
     return (
-      <div className="min-h-screen bg-zinc-50 flex items-center justify-center">
-        <div className="w-6 h-6 border-2 border-zinc-300 border-t-zinc-700 rounded-full animate-spin" />
+      <div className="min-h-screen bg-[#FFF8F2] flex items-center justify-center">
+        <div className="w-6 h-6 border-2 border-[#FFE0D0] border-t-[#FF6B35] rounded-full animate-spin" />
       </div>
     );
   }
@@ -33,11 +30,12 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   if (isPublic) return <>{children}</>;
 
   return (
-    <div className="flex h-full bg-zinc-50">
-      <Navigation />
-      <main className="flex-1 min-w-0 overflow-y-auto pb-16 md:pb-0">
+    <div className="h-full bg-[#FFF8F2]">
+      {/* pb-28 → floating nav için alan */}
+      <main className="h-full overflow-y-auto pb-28">
         {children}
       </main>
+      <Navigation />
     </div>
   );
 }
