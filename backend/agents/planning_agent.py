@@ -47,6 +47,7 @@ async def run(
     traffic_legs: list[dict],
     week_start: datetime,
     user_preferences: dict | None = None,
+    drive_context: str | None = None,
 ) -> AgentReport:
     import asyncio
     t0 = time.monotonic()
@@ -55,7 +56,7 @@ async def run(
     prefs = user_preferences or {}
 
     context = _build_context(
-        gmail_tasks, sheets_tasks, free_slots, traffic_legs, week_start, prefs
+        gmail_tasks, sheets_tasks, free_slots, traffic_legs, week_start, prefs, drive_context
     )
     full_prompt = f"{SYSTEM_PROMPT}\n\n{context}"
 
@@ -91,7 +92,8 @@ async def run(
 
 
 def _build_context(
-    gmail_tasks, sheets_tasks, free_slots, traffic_legs, week_start, prefs
+    gmail_tasks, sheets_tasks, free_slots, traffic_legs, week_start, prefs,
+    drive_context: str | None = None,
 ) -> str:
     parts = [
         f"Hafta başlangıcı: {week_start.strftime('%Y-%m-%d')} ({week_start.strftime('%A')})",
@@ -128,6 +130,11 @@ def _build_context(
                     f"- {leg['label']}: ~{leg['duration_traffic_min']} dk "
                     f"({leg['traffic_label']})"
                 )
+        parts.append("")
+
+    if drive_context:
+        parts.append("=== DRIVE BAĞLAMI ===")
+        parts.append(drive_context)
         parts.append("")
 
     total = len(gmail_tasks) + len(sheets_tasks)

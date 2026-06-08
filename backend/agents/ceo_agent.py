@@ -11,6 +11,7 @@ import agents.traffic_agent as traffic_agent
 import agents.planning_agent as planning_agent
 import agents.me_time_agent as me_time_agent
 import agents.location_agent as location_agent
+import agents.drive_agent as drive_agent
 from typing import AsyncIterator
 
 SYSTEM_PROMPT = """Sen Plan Pete adlı kişisel yaşam asistanısın. Kullanıcının haftalık planını yapar, mekan önerir, Me Time aktiviteleri sunar.
@@ -126,6 +127,7 @@ async def _gather_weekly_plan_context(user_data: dict, credentials: Credentials)
     parallel_tasks = [
         (gmail_agent.run, {"credentials": credentials}),
         (calendar_agent.run, {"credentials": credentials, "week_start": week_start}),
+        (drive_agent.run, {"credentials": credentials, "read_content": False}),
     ]
     if sheets_file_id:
         parallel_tasks.append(
@@ -135,13 +137,16 @@ async def _gather_weekly_plan_context(user_data: dict, credentials: Credentials)
     reports = await run_parallel(parallel_tasks)
     gmail_report = reports[0]
     calendar_report = reports[1]
-    sheets_report = reports[2] if sheets_file_id else None
+    drive_report = reports[2]
+    sheets_report = reports[3] if sheets_file_id else None
 
     gmail_tasks = gmail_report.result.get("tasks", []) if gmail_report.status != "failed" else []
     sheets_tasks = sheets_report.result.get("tasks", []) if sheets_report and sheets_report.status != "failed" else []
     free_slots = calendar_report.result.get("free_slots", []) if calendar_report.status != "failed" else []
     located_events = calendar_report.result.get("located_events", [])
     existing_events = calendar_report.result.get("existing_events", [])
+    drive_context = drive_report.result.get("context", "") if drive_report.status != "failed" else ""
+    drive_files = drive_report.result.get("relevant_files", []) if drive_report.status != "failed" else []
 
     traffic_legs = []
     if located_events and user_data.get("home_address"):
@@ -160,6 +165,7 @@ async def _gather_weekly_plan_context(user_data: dict, credentials: Credentials)
         traffic_legs=traffic_legs,
         week_start=week_start,
         user_preferences=user_data.get("preferences", {}),
+        drive_context=drive_context,
     )
 
     errors = []
@@ -169,6 +175,8 @@ async def _gather_weekly_plan_context(user_data: dict, credentials: Credentials)
         errors.append("Takvim okunamadı")
     if sheets_report and sheets_report.status == "failed":
         errors.append("Yapılacaklar dosyası okunamadı")
+    if drive_report.status == "failed":
+        errors.append("Drive dosyalarına ulaşılamadı")
 
     parts = []
     if errors:
@@ -191,6 +199,12 @@ async def _gather_weekly_plan_context(user_data: dict, credentials: Credentials)
         parts.append(f"\nYapılacaklar listesinden {len(sheets_tasks)} görev:")
         for t in sheets_tasks[:5]:
             parts.append(f"  - {t.get('title', '')}")
+
+    # Drive dosyaları
+    if drive_files:
+        parts.append(f"\nDrive'dan {len(drive_files)} ilgili dosya:")
+        for f in drive_files[:4]:
+            parts.append(f"  - {f.get('name', '')} ({f.get('reason', '')})")
 
     # Müsait slotlar
     if free_slots:

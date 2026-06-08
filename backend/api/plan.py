@@ -12,6 +12,7 @@ import agents.sheets_agent as sheets_agent
 import agents.calendar_agent as calendar_agent
 import agents.traffic_agent as traffic_agent
 import agents.planning_agent as planning_agent
+import agents.drive_agent as drive_agent
 from core.orchestrator import run_parallel
 
 router = APIRouter(prefix="/api/plan", tags=["plan"])
@@ -86,6 +87,7 @@ async def generate_plan(request: Request):
     parallel_tasks = [
         (gmail_agent.run, {"credentials": credentials}),
         (calendar_agent.run, {"credentials": credentials, "week_start": week_start}),
+        (drive_agent.run, {"credentials": credentials, "read_content": False}),
     ]
     sheets_file_id = db_user.get("sheets_file_id")
     if sheets_file_id:
@@ -96,12 +98,14 @@ async def generate_plan(request: Request):
     reports = await run_parallel(parallel_tasks)
     gmail_report = reports[0]
     cal_report = reports[1]
-    sheets_report = reports[2] if sheets_file_id else None
+    drive_report = reports[2]
+    sheets_report = reports[3] if sheets_file_id else None
 
     gmail_tasks = gmail_report.result.get("tasks", []) if gmail_report.status != "failed" else []
     sheets_tasks = sheets_report.result.get("tasks", []) if sheets_report and sheets_report.status != "failed" else []
     free_slots = cal_report.result.get("free_slots", []) if cal_report.status != "failed" else []
     located_events = cal_report.result.get("located_events", [])
+    drive_context = drive_report.result.get("context", "") if drive_report.status != "failed" else ""
 
     traffic_legs = []
     home_address = db_user.get("home_address", "")
@@ -121,6 +125,7 @@ async def generate_plan(request: Request):
         traffic_legs=traffic_legs,
         week_start=week_start,
         user_preferences=db_user.get("preferences", {}),
+        drive_context=drive_context,
     )
 
     plan_items = plan_report.result.get("plan", [])
