@@ -1,6 +1,8 @@
 "use client";
 import { useState, useEffect } from "react";
-import { User, Link2, Clock, MapPin, FileSpreadsheet, LogOut, ChevronRight, CheckCircle2 } from "lucide-react";
+import { motion } from "framer-motion";
+import { User, Link2, Clock, MapPin, FileSpreadsheet, LogOut, ChevronRight, CheckCircle2, Zap } from "lucide-react";
+import { staggerContainer, fadeUp } from "@/lib/animations";
 
 const BACKEND = process.env.NEXT_PUBLIC_BACKEND_URL ?? "";
 
@@ -8,16 +10,9 @@ const PLANNING_DAYS = ["Pazartesi", "Salı", "Çarşamba", "Perşembe", "Cuma", 
 const HOURS = Array.from({ length: 24 }, (_, i) => i);
 
 interface UserSettings {
-  name: string;
-  email: string;
-  auth_provider: string;
-  google_connected: boolean;
-  planning_day: number;
-  work_start_hour: number;
-  work_end_hour: number;
-  home_address: string;
-  work_address: string;
-  sheets_file_id: string;
+  name: string; email: string; auth_provider: string; google_connected: boolean;
+  planning_day: number; work_start_hour: number; work_end_hour: number;
+  home_address: string; work_address: string; sheets_file_id: string;
 }
 
 export default function SettingsPage() {
@@ -26,9 +21,9 @@ export default function SettingsPage() {
     planning_day: 0, work_start_hour: 9, work_end_hour: 20,
     home_address: "", work_address: "", sheets_file_id: "",
   });
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [saved, setSaved] = useState(false);
+  const [loading, setLoading]   = useState(true);
+  const [saving, setSaving]     = useState(false);
+  const [saved, setSaved]       = useState(false);
   const [sheetsFiles, setSheetsFiles] = useState<{ id: string; name: string }[]>([]);
   const [driveNeedsReconnect, setDriveNeedsReconnect] = useState(false);
 
@@ -79,159 +74,180 @@ export default function SettingsPage() {
   }
 
   if (loading) return (
-    <div className="min-h-screen bg-zinc-50 flex items-center justify-center">
-      <div className="w-6 h-6 border-2 border-zinc-300 border-t-zinc-900 rounded-full animate-spin" />
+    <div className="min-h-screen bg-[#FFF8F2] flex items-center justify-center">
+      <div className="w-6 h-6 border-2 border-[#F0E4D7] border-t-[#FF6B35] rounded-full animate-spin" />
     </div>
   );
 
   return (
-    <div className="min-h-screen bg-zinc-50">
-      <header className="bg-white border-b border-zinc-200 px-6 py-5 flex items-center justify-between">
+    <div className="min-h-screen bg-[#FFF8F2]">
+      {/* ── Header ── */}
+      <header className="gradient-hero px-6 py-6 flex items-center justify-between">
         <div>
-          <h1 className="font-semibold text-xl text-zinc-900">Ayarlar</h1>
-          <p className="text-sm text-zinc-500 mt-0.5">Hesap ve tercihler</p>
+          <h1 className="text-white font-800 text-xl leading-tight">Ayarlar</h1>
+          <p className="text-white/70 text-sm mt-0.5">Hesap ve tercihler</p>
         </div>
-        <button onClick={save} disabled={saving}
-          className="flex items-center gap-2 px-4 py-2 rounded-xl bg-zinc-900 text-white text-sm font-medium hover:bg-zinc-700 disabled:opacity-50 transition-colors">
+        <motion.button onClick={save} disabled={saving} whileTap={{ scale: 0.97 }}
+          className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-700 transition-all ${
+            saved
+              ? "bg-green-400 text-white"
+              : "bg-white text-[#FF6B35] hover:bg-white/90"
+          } disabled:opacity-60`}>
           {saved ? <><CheckCircle2 size={14} /> Kaydedildi</> : saving ? "Kaydediliyor..." : "Kaydet"}
-        </button>
+        </motion.button>
       </header>
 
-      <div className="max-w-2xl mx-auto px-6 py-8 space-y-5">
-
+      <motion.div
+        variants={staggerContainer} initial="hidden" animate="show"
+        className="max-w-lg mx-auto px-4 py-5 space-y-4"
+      >
         {/* Profil */}
-        <Section icon={User} title="Profil Bilgileri">
-          <FieldRow label="İsim">
-            <input value={settings.name} onChange={(e) => set("name", e.target.value)}
-              placeholder="Adın"
-              className="w-full rounded-xl border border-zinc-200 px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-zinc-900" />
-          </FieldRow>
-          <FieldRow label="E-posta">
-            <input value={settings.email} disabled
-              className="w-full rounded-xl border border-zinc-100 bg-zinc-50 px-4 py-2.5 text-sm text-zinc-400 cursor-not-allowed" />
-          </FieldRow>
-        </Section>
+        <motion.div variants={fadeUp}>
+          <Section icon={User} title="Profil Bilgileri">
+            <FieldRow label="İsim">
+              <WarmInput value={settings.name} onChange={(v) => set("name", v)} placeholder="Adın" />
+            </FieldRow>
+            <FieldRow label="E-posta">
+              <input value={settings.email} disabled
+                className="w-full rounded-xl border border-[#F0E4D7] bg-[#F8EFE8] px-4 py-2.5 text-sm text-[#A88070] cursor-not-allowed" />
+            </FieldRow>
+          </Section>
+        </motion.div>
 
         {/* Google bağlantısı */}
-        <Section icon={Link2} title="Bağlı Hesaplar">
-          <div className="flex items-center justify-between py-1">
-            <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-lg bg-white border border-zinc-200 flex items-center justify-center">
-                <GoogleIcon />
+        <motion.div variants={fadeUp}>
+          <Section icon={Link2} title="Bağlı Hesaplar">
+            <div className="flex items-center justify-between py-1">
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-xl bg-white border border-[#F0E4D7] flex items-center justify-center shadow-sm">
+                  <GoogleIcon />
+                </div>
+                <div>
+                  <p className="text-sm font-600 text-[#1A0F0A]">Google</p>
+                  <p className="text-xs text-[#A88070]">
+                    {settings.google_connected ? "Takvim, Gmail, Drive bağlı" : "Bağlı değil"}
+                  </p>
+                </div>
               </div>
-              <div>
-                <p className="text-sm font-medium text-zinc-900">Google</p>
-                <p className="text-xs text-zinc-400">
-                  {settings.google_connected ? "Takvim, Gmail, Drive bağlı" : "Bağlı değil"}
-                </p>
-              </div>
+              {settings.google_connected && !driveNeedsReconnect ? (
+                <span className="flex items-center gap-1.5 text-xs text-green-600 font-600">
+                  <CheckCircle2 size={13} /> Bağlı
+                </span>
+              ) : (
+                <a href={`${BACKEND}/api/auth/google`}
+                  className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-full gradient-primary text-white font-600 hover:opacity-90 transition-opacity">
+                  {driveNeedsReconnect ? "İzinleri Yenile" : "Bağla"} <ChevronRight size={11} />
+                </a>
+              )}
             </div>
-            {settings.google_connected && !driveNeedsReconnect ? (
-              <span className="flex items-center gap-1.5 text-xs text-green-600 font-medium">
-                <CheckCircle2 size={13} /> Bağlı
-              </span>
-            ) : (
-              <a href={`${BACKEND}/api/auth/google`}
-                className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg bg-zinc-900 text-white hover:bg-zinc-700 transition-colors">
-                {driveNeedsReconnect ? "İzinleri Yenile" : "Bağla"} <ChevronRight size={12} />
-              </a>
-            )}
-          </div>
-        </Section>
+          </Section>
+        </motion.div>
 
         {/* Planlama tercihleri */}
-        <Section icon={Clock} title="Planlama Tercihleri">
-          <FieldRow label="Otomatik planlama günü">
-            <select value={settings.planning_day} onChange={(e) => set("planning_day", Number(e.target.value))}
-              className="w-full rounded-xl border border-zinc-200 px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-zinc-900 bg-white">
-              {PLANNING_DAYS.map((d, i) => <option key={i} value={i}>{d}</option>)}
-            </select>
-          </FieldRow>
-          <FieldRow label="Çalışma saatleri">
-            <div className="flex items-center gap-2">
-              <select value={settings.work_start_hour} onChange={(e) => set("work_start_hour", Number(e.target.value))}
-                className="flex-1 rounded-xl border border-zinc-200 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-zinc-900 bg-white">
-                {HOURS.map((h) => <option key={h} value={h}>{String(h).padStart(2, "0")}:00</option>)}
-              </select>
-              <span className="text-zinc-400 text-sm shrink-0">–</span>
-              <select value={settings.work_end_hour} onChange={(e) => set("work_end_hour", Number(e.target.value))}
-                className="flex-1 rounded-xl border border-zinc-200 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-zinc-900 bg-white">
-                {HOURS.map((h) => <option key={h} value={h}>{String(h).padStart(2, "0")}:00</option>)}
-              </select>
-            </div>
-          </FieldRow>
-        </Section>
+        <motion.div variants={fadeUp}>
+          <Section icon={Clock} title="Planlama Tercihleri">
+            <FieldRow label="Otomatik planlama günü">
+              <WarmSelect value={settings.planning_day} onChange={(v) => set("planning_day", v)}>
+                {PLANNING_DAYS.map((d, i) => <option key={i} value={i}>{d}</option>)}
+              </WarmSelect>
+            </FieldRow>
+            <FieldRow label="Çalışma saatleri">
+              <div className="flex items-center gap-2">
+                <WarmSelect value={settings.work_start_hour} onChange={(v) => set("work_start_hour", v)}>
+                  {HOURS.map((h) => <option key={h} value={h}>{String(h).padStart(2, "0")}:00</option>)}
+                </WarmSelect>
+                <span className="text-[#A88070] text-sm shrink-0">–</span>
+                <WarmSelect value={settings.work_end_hour} onChange={(v) => set("work_end_hour", v)}>
+                  {HOURS.map((h) => <option key={h} value={h}>{String(h).padStart(2, "0")}:00</option>)}
+                </WarmSelect>
+              </div>
+            </FieldRow>
+          </Section>
+        </motion.div>
 
         {/* Adresler */}
-        <Section icon={MapPin} title="Adresler">
-          <FieldRow label="Ev adresi" hint="Trafik tahmini için kullanılır">
-            <input value={settings.home_address} onChange={(e) => set("home_address", e.target.value)}
-              placeholder="Örn: Moda, Kadıköy, İstanbul"
-              className="w-full rounded-xl border border-zinc-200 px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-zinc-900" />
-          </FieldRow>
-          <FieldRow label="İş adresi" hint="Opsiyonel">
-            <input value={settings.work_address} onChange={(e) => set("work_address", e.target.value)}
-              placeholder="Örn: Levent, Beşiktaş, İstanbul"
-              className="w-full rounded-xl border border-zinc-200 px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-zinc-900" />
-          </FieldRow>
-        </Section>
+        <motion.div variants={fadeUp}>
+          <Section icon={MapPin} title="Adresler">
+            <FieldRow label="Ev adresi" hint="Trafik tahmini için kullanılır">
+              <WarmInput value={settings.home_address} onChange={(v) => set("home_address", v)}
+                placeholder="Örn: Moda, Kadıköy, İstanbul" />
+            </FieldRow>
+            <FieldRow label="İş adresi" hint="Opsiyonel">
+              <WarmInput value={settings.work_address} onChange={(v) => set("work_address", v)}
+                placeholder="Örn: Levent, Beşiktaş, İstanbul" />
+            </FieldRow>
+          </Section>
+        </motion.div>
 
         {/* Google Sheets dosyası */}
         {settings.google_connected && (
-          <Section icon={FileSpreadsheet} title="Yapılacaklar Dosyası">
-            <FieldRow label="Google Sheets" hint="Plan Pete bu dosyadan görevleri okur">
-              {driveNeedsReconnect ? (
-                <div className="px-4 py-3 border border-amber-200 rounded-xl bg-amber-50 space-y-2">
-                  <p className="text-sm text-amber-700">
-                    Drive erişimi için Google bağlantısını yenilemeniz gerekiyor.
+          <motion.div variants={fadeUp}>
+            <Section icon={FileSpreadsheet} title="Yapılacaklar Dosyası">
+              <FieldRow label="Google Sheets" hint="Plan Pete bu dosyadan görevleri okur">
+                {driveNeedsReconnect ? (
+                  <div className="px-4 py-3 border border-[#FFE0B2] rounded-xl bg-[#FFF8EE] space-y-2">
+                    <p className="text-sm text-[#A88070]">
+                      Drive erişimi için Google bağlantısını yenilemeniz gerekiyor.
+                    </p>
+                    <a href={`${BACKEND}/api/auth/google`}
+                      className="inline-flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-full gradient-primary text-white font-600 hover:opacity-90 transition-opacity">
+                      İzinleri Yenile <ChevronRight size={11} />
+                    </a>
+                  </div>
+                ) : sheetsFiles.length > 0 ? (
+                  <WarmSelect value={settings.sheets_file_id}
+                    onChange={(v) => set("sheets_file_id", v)}>
+                    <option value="">Seç...</option>
+                    {sheetsFiles.map((f) => <option key={f.id} value={f.id}>{f.name}</option>)}
+                  </WarmSelect>
+                ) : (
+                  <p className="text-sm text-[#A88070] px-4 py-2.5 border border-[#F0E4D7] rounded-xl bg-[#F8EFE8]">
+                    Drive&apos;da Google Sheets dosyası bulunamadı.
                   </p>
-                  <a href={`${BACKEND}/api/auth/google`}
-                    className="inline-flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg bg-zinc-900 text-white hover:bg-zinc-700 transition-colors">
-                    İzinleri Yenile <ChevronRight size={12} />
-                  </a>
-                </div>
-              ) : sheetsFiles.length > 0 ? (
-                <select value={settings.sheets_file_id}
-                  onChange={(e) => set("sheets_file_id", e.target.value)}
-                  className="w-full rounded-xl border border-zinc-200 px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-zinc-900 bg-white">
-                  <option value="">Seç...</option>
-                  {sheetsFiles.map((f) => <option key={f.id} value={f.id}>{f.name}</option>)}
-                </select>
-              ) : (
-                <p className="text-sm text-zinc-400 px-4 py-2.5 border border-zinc-100 rounded-xl bg-zinc-50">
-                  Drive&apos;da Google Sheets dosyası bulunamadı.
-                </p>
-              )}
-            </FieldRow>
-          </Section>
+                )}
+              </FieldRow>
+            </Section>
+          </motion.div>
         )}
 
-        {/* Çıkış / Tehlikeli */}
-        <div className="bg-white rounded-2xl border border-zinc-200 overflow-hidden">
-          <form action={`${BACKEND}/api/auth/logout`} method="post">
-            <button type="submit"
-              className="w-full flex items-center justify-between px-5 py-4 text-sm text-red-500 hover:bg-red-50 transition-colors">
-              <span className="flex items-center gap-3">
-                <LogOut size={16} /> Çıkış Yap
-              </span>
-              <ChevronRight size={14} />
-            </button>
-          </form>
-        </div>
+        {/* Çıkış */}
+        <motion.div variants={fadeUp}>
+          <div className="bg-white rounded-2xl overflow-hidden shadow-card border border-[#F0E4D7]">
+            <form action={`${BACKEND}/api/auth/logout`} method="post">
+              <button type="submit"
+                className="w-full flex items-center justify-between px-5 py-4 text-sm text-red-500 hover:bg-red-50 transition-colors">
+                <span className="flex items-center gap-3 font-500">
+                  <LogOut size={15} /> Çıkış Yap
+                </span>
+                <ChevronRight size={13} className="text-red-300" />
+              </button>
+            </form>
+          </div>
+        </motion.div>
 
-      </div>
+        {/* App version */}
+        <motion.div variants={fadeUp} className="flex items-center justify-center gap-2 py-2">
+          <div className="w-5 h-5 rounded-md gradient-primary flex items-center justify-center">
+            <Zap size={10} className="text-white fill-white" />
+          </div>
+          <span className="text-xs text-[#C4A899] font-500">Planlama App · Plan Pete</span>
+        </motion.div>
+      </motion.div>
     </div>
   );
 }
 
+// ── Sub-components ────────────────────────────────────────────────────────
 function Section({ icon: Icon, title, children }: {
   icon: React.ElementType; title: string; children: React.ReactNode;
 }) {
   return (
-    <div className="bg-white rounded-2xl border border-zinc-200 overflow-hidden shadow-sm">
-      <div className="flex items-center gap-2.5 px-5 py-4 border-b border-zinc-100">
-        <Icon size={15} strokeWidth={1.75} className="text-zinc-400" />
-        <p className="text-sm font-semibold text-zinc-700">{title}</p>
+    <div className="bg-white rounded-2xl overflow-hidden shadow-card border border-[#F0E4D7]">
+      <div className="flex items-center gap-2.5 px-5 py-3.5 border-b border-[#F8EFE8]">
+        <div className="w-6 h-6 rounded-lg gradient-subtle flex items-center justify-center">
+          <Icon size={12} strokeWidth={2} className="text-[#FF6B35]" />
+        </div>
+        <p className="text-sm font-700 text-[#1A0F0A]">{title}</p>
       </div>
       <div className="px-5 py-4 space-y-4">{children}</div>
     </div>
@@ -242,11 +258,32 @@ function FieldRow({ label, hint, children }: { label: string; hint?: string; chi
   return (
     <div className="space-y-1.5">
       <div className="flex items-baseline gap-2">
-        <label className="text-xs font-medium text-zinc-600">{label}</label>
-        {hint && <span className="text-xs text-zinc-400">{hint}</span>}
+        <label className="text-xs font-600 text-[#6B4F3A]">{label}</label>
+        {hint && <span className="text-xs text-[#C4A899]">{hint}</span>}
       </div>
       {children}
     </div>
+  );
+}
+
+function WarmInput({ value, onChange, placeholder }: {
+  value: string; onChange: (v: string) => void; placeholder?: string;
+}) {
+  return (
+    <input value={value} onChange={(e) => onChange(e.target.value)}
+      placeholder={placeholder}
+      className="w-full rounded-xl border border-[#F0E4D7] bg-white px-4 py-2.5 text-sm text-[#1A0F0A] placeholder-[#C4A899] outline-none focus:border-[#FF6B35]/50 focus:shadow-[0_0_0_3px_rgba(255,107,53,0.1)] transition-all" />
+  );
+}
+
+function WarmSelect({ value, onChange, children }: {
+  value: string | number; onChange: (v: number) => void; children: React.ReactNode;
+}) {
+  return (
+    <select value={value} onChange={(e) => onChange(Number(e.target.value))}
+      className="w-full rounded-xl border border-[#F0E4D7] bg-white px-4 py-2.5 text-sm text-[#1A0F0A] outline-none focus:border-[#FF6B35]/50 focus:shadow-[0_0_0_3px_rgba(255,107,53,0.1)] transition-all">
+      {children}
+    </select>
   );
 }
 
